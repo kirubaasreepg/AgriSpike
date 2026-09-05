@@ -1,0 +1,555 @@
+/* ==========================================================================
+   AgriSpike Smart Agriculture Design System
+   CSS Variables & Design Tokens (Light & Dark Themes)
+   ========================================================================== */
+
+:root {
+  /* Common Brand Colors */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Status Tokens */
+  --color-online: #16a34a;      /* Emerald Green */
+  --color-online-bg: #dcfce7;
+  --color-warning: #d97706;     /* Amber */
+  --color-warning-bg: #fef3c7;
+  --color-fault: #dc2626;       /* Red */
+  --color-fault-bg: #fee2e2;
+
+  /* Light Theme (Default) */
+  --bg: #f8fafc;                /* Clean soft white/slate */
+  --bg-panel: #ffffff;          /* Pure white card */
+  --bg-panel-hover: #f1f5f9;
+  --bg-muted: #f1f5f9;
+  --text: #0f172a;              /* Slate 900 */
+  --text-muted: #475569;        /* Slate 600 */
+  --text-faint: #94a3b8;        /* Slate 400 */
+  --border: #e2e8f0;            /* Slate 200 */
+  --border-focus: #16a34a;
+  --accent: #16a34a;
+  --accent-hover: #15803d;
+  --accent-light: #f0fdf4;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg: #090d16;                /* Deep crisp dark slate */
+  --bg-panel: #111827;          /* Dark card panel */
+  --bg-panel-hover: #1f2937;
+  --bg-muted: #1e293b;
+  --text: #f8fafc;              /* Slate 50 */
+  --text-muted: #cbd5e1;        /* Slate 300 */
+  --text-faint: #64748b;        /* Slate 500 */
+  --border: #1e293b;            /* Subtle slate border */
+  --border-focus: #22c55e;
+  --accent: #22c55e;            /* Vibrant healthy green */
+  --accent-hover: #16a34a;
+  --accent-light: rgba(34, 197, 94, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================================================
+   Base Elements & Reset
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* ==========================================================================
+   Layout & App Shell
+   ========================================================================== */
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg);
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 16px;
+  }
+}
+
+/* ==========================================================================
+   UI Components: Cards, Buttons, Badges & Forms
+   ========================================================================== */
+
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  transition: all 0.15s ease-in-out;
+}
+
+.btn:hover {
+  background: var(--bg-panel-hover);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  border: 1px solid var(--accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-danger {
+  background: var(--color-fault);
+  color: #ffffff;
+  border: 1px solid var(--color-fault);
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  border-color: var(--border-focus);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-online {
+  background: var(--color-online-bg);
+  color: var(--color-online);
+}
+
+.badge-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.badge-fault {
+  background: var(--color-fault-bg);
+  color: var(--color-fault);
+}
+
+/* ==========================================================================
+   Grids & Layout Utilities
+   ========================================================================== */
+
+.grid-cols-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.grid-cols-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.grid-cols-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-cols-4, .grid-cols-3, .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   My Field Page - Left Map / Right 2x2 Node Cards Layout
+   ========================================================================== */
+
+.myfield-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  min-height: calc(100vh - 190px);
+}
+
+.myfield-nodes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.myfield-node-card {
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.myfield-node-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 1024px) {
+  .myfield-layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .myfield-nodes-grid {
+    grid-template-rows: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .myfield-nodes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Weather Page - High Visibility Thicker Card Borders
+   ========================================================================== */
+
+.weather-page .card {
+  border: 2px solid #cbd5e1;
+}
+
+[data-theme="dark"] .weather-page .card {
+  border: 2px solid #374151;
+}
+
+.weather-page .card:hover {
+  border-color: var(--accent);
+}
+
+.weather-page .weather-banner-live {
+  border: 2px solid var(--color-online) !important;
+}
+
+.weather-page .weather-banner-demo {
+  border: 2px solid var(--color-warning) !important;
+}
+
+.weather-page .weather-banner-error {
+  border: 2px solid var(--color-fault) !important;
+}
+
+/* ==========================================================================
+   Dark Room Login Experience & Pull-Cord Physics
+   ========================================================================== */
+
+.darkroom-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #030712; /* Pitch dark night room */
+  transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.darkroom-container.light-on {
+  background-color: #0f172a;
+}
+
+/* Light cone beam emerging from overhead bulb */
+.light-beam {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 100vh;
+  background: radial-gradient(ellipse at 50% 0%, rgba(254, 240, 138, 0.35) 0%, rgba(253, 224, 71, 0.15) 45%, rgba(0, 0, 0, 0) 75%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.7s ease-out;
+  z-index: 1;
+}
+
+.darkroom-container.light-on .light-beam {
+  opacity: 1;
+}
+
+/* Ceiling Lamp & Cord */
+.ceiling-lamp-rig {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+}
+
+.lamp-cord {
+  width: 3px;
+  height: 90px;
+  background: #64748b;
+  box-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
+.lamp-bulb-holder {
+  width: 24px;
+  height: 16px;
+  background: #334155;
+  border-radius: 4px 4px 0 0;
+}
+
+.lamp-bulb {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #475569;
+  margin-top: -4px;
+  transition: all 0.4s ease;
+  box-shadow: 0 0 4px rgba(0,0,0,0.8);
+}
+
+.darkroom-container.light-on .lamp-bulb {
+  background: #fef08a;
+  box-shadow: 0 0 35px #fef08a, 0 0 70px #facc15;
+}
+
+/* Interactive Pull Cord Hanging from Lamp */
+.pull-cord-assembly {
+  position: absolute;
+  top: 100px;
+  left: calc(50% + 45px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: grab;
+  z-index: 30;
+  touch-action: none;
+}
+
+.pull-cord-assembly:active {
+  cursor: grabbing;
+}
+
+.cord-string {
+  width: 2px;
+  height: 120px;
+  background: #94a3b8;
+  transition: height 0.15s ease-out;
+}
+
+.cord-handle {
+  width: 18px;
+  height: 32px;
+  background: linear-gradient(180deg, #d97706, #b45309);
+  border: 1px solid #fef08a;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease-out;
+}
+
+.cord-handle-ring {
+  width: 6px;
+  height: 12px;
+  border: 1.5px solid rgba(255,255,255,0.7);
+  border-radius: 3px;
+}
+
+.cord-instruction {
+  position: absolute;
+  top: 160px;
+  left: 30px;
+  white-space: nowrap;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(254, 240, 138, 0.3);
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: #fef08a;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  animation: bounceHint 2s infinite ease-in-out;
+}
+
+@keyframes bounceHint {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Login Card emerging from darkness */
+.login-stage {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 60px;
+}
+
+.login-form-card {
+  width: 380px;
+  max-width: 90vw;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+  opacity: 0.15;
+  filter: blur(4px);
+  transform: translateY(20px) scale(0.96);
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #f8fafc;
+}
+
+.darkroom-container.light-on .login-form-card {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0) scale(1);
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 30px rgba(34, 197, 94, 0.15);
+}
+
+/* ==========================================================================
+   Leaflet Map Customizations
+   ========================================================================== */
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  z-index: 1;
+}
+
+/* Pulse animation on sensor markers */
+.sensor-marker-pulse {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sensor-marker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.sensor-marker-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  opacity: 0.75;
+  animation: radarPulse 2s infinite cubic-bezier(0.2, 0, 0.8, 1);
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(0.5); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
