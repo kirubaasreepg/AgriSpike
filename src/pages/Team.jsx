@@ -62,10 +62,6 @@ export default function Team() {
               <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)', marginBottom: 8 }}>
                 {member.role}
               </div>
-
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
-                Specialization: {member.specialty}
-              </div>
             </div>
 
             <div style={{
