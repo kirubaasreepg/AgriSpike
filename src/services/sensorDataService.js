@@ -2,7 +2,7 @@
 // Firebase -> Website real-time telemetry
 
 import { useState, useEffect } from 'react';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import { database } from '../firebase';
 import { SENSOR_NODES } from '../constants/agriConfig';
 
@@ -15,6 +15,7 @@ import { SENSOR_NODES } from '../constants/agriConfig';
 const INITIAL_READINGS = {
   1: {
     node_id: 1,
+    id: 1,
     at: undefined,
     ah: undefined,
     st: undefined,
@@ -29,11 +30,14 @@ const INITIAL_READINGS = {
     sys: 'OK',
     mode: 'NORMAL',
     err: false,
+    errorCode: 0,
+    errCode: 0,
     lastUpdated: '--',
   },
 
   2: {
     node_id: 2,
+    id: 2,
     at: undefined,
     ah: undefined,
     st: undefined,
@@ -48,11 +52,14 @@ const INITIAL_READINGS = {
     sys: 'OK',
     mode: 'NORMAL',
     err: false,
+    errorCode: 0,
+    errCode: 0,
     lastUpdated: '--',
   },
 
   3: {
     node_id: 3,
+    id: 3,
     at: undefined,
     ah: undefined,
     st: undefined,
@@ -67,11 +74,14 @@ const INITIAL_READINGS = {
     sys: 'OK',
     mode: 'NORMAL',
     err: false,
+    errorCode: 0,
+    errCode: 0,
     lastUpdated: '--',
   },
 
   4: {
     node_id: 4,
+    id: 4,
     at: undefined,
     ah: undefined,
     st: undefined,
@@ -86,6 +96,8 @@ const INITIAL_READINGS = {
     sys: 'OK',
     mode: 'NORMAL',
     err: false,
+    errorCode: 0,
+    errCode: 0,
     lastUpdated: '--',
   },
 };
@@ -93,8 +105,7 @@ const INITIAL_READINGS = {
 
 // ============================================================
 // INITIAL SOLENOID STATE
-// Kept local for now.
-// Firebase irrigation control will be added later.
+// Updated in real-time via Firebase: AgriSpike/Irrigation
 // ============================================================
 
 const INITIAL_SOLENOIDS = {
@@ -185,221 +196,229 @@ class SensorDataService {
 
 
   // ==========================================================
+  // MAP FIREBASE REALTIME RECORD TO SENSOR MODEL
+  // ==========================================================
+
+  mapFirebaseReading(data, nodeId) {
+    if (!data || typeof data !== 'object') return null;
+
+    const num = (v) => (v !== undefined && v !== null && !isNaN(Number(v)) ? Number(v) : undefined);
+    const bool = (v) => v === true || v === 1 || v === '1';
+
+    const rawId = num(data.ID) ?? nodeId;
+    const at = num(data.AT);
+    const ah = num(data.AH);
+    const st = num(data.ST);
+    const sm = num(data.SM);
+    const ldr = num(data.LDR);
+    const dl = num(data.DL);
+    const et = num(data.ET);
+    const bv = num(data.BV);
+    const bp = num(data.BP);
+    const sv = num(data.SV);
+    const psi = num(data.PSI) ?? num(data.PS);
+    const day = data.DAY !== undefined ? bool(data.DAY) : true;
+    const irr = data.IRR !== undefined ? (num(data.IRR) === 1 || bool(data.IRR)) : false;
+    const hs = data.HS !== undefined ? (num(data.HS) === 1 || bool(data.HS)) : false;
+    const pir = data.PIR !== undefined ? (num(data.PIR) === 1 || bool(data.PIR)) : false;
+    const errorCode = num(data.ERR) ?? 0;
+    const sys = typeof data.SYS === 'string' ? data.SYS : 'OK';
+    const mode = typeof data.MODE === 'string' ? data.MODE : 'NORMAL';
+    const ss = typeof data.SS === 'string' ? data.SS : 'ACTIVE';
+
+    // The website checks !reading.err to determine if telemetry data is available.
+    // When a valid payload is received from Firebase (has valid telemetry fields),
+    // err is FALSE because telemetry communication is active and alive.
+    // Diagnostic hardware error codes (such as ERR: 3) are preserved in errorCode.
+    const hasTelemetry = at !== undefined || ah !== undefined || st !== undefined || sm !== undefined || bv !== undefined;
+    const isOffline = !hasTelemetry || sys === 'DISCONNECTED' || sys === 'OFFLINE';
+
+    return {
+      // Primary website identifiers & values
+      node_id: rawId,
+      id: rawId,
+      at,
+      ah,
+      st,
+      sm,
+      ldr,
+      day,
+      dl,
+      et,
+      bv,
+      bp,
+      sv,
+      ss,
+      irr,
+      hs,
+      psi,
+      ps: psi,
+      sys,
+      mode,
+      pir,
+      errorCode,
+      errCode: errorCode,
+
+      // Telemetry status flag: false when live packet is received
+      err: isOffline,
+
+      // Descriptive property aliases for compatibility
+      airTemperature: at,
+      airHumidity: ah,
+      soilTemperature: st,
+      soilMoisture: sm,
+      lightLevel: ldr,
+      isDay: day,
+      daylightDuration: dl,
+      evapotranspiration: et,
+      batteryVoltage: bv,
+      batteryPercentage: bp,
+      batteryLevel: bp,
+      solarVoltage: sv,
+      solarStatus: ss,
+      plantStress: psi,
+      systemStatus: sys,
+      operatingMode: mode,
+      irrigation: irr,
+      heatStress: hs,
+
+      // Timestamp metadata
+      lastUpdated: new Date().toLocaleTimeString(),
+      timestamp: data.timestamp || (data.timestamp_ms ? new Date(data.timestamp_ms).toLocaleTimeString() : new Date().toLocaleTimeString()),
+    };
+  }
+
+
+  // ==========================================================
   // FIREBASE REAL-TIME LISTENERS
   // ==========================================================
 
   startFirebaseListeners() {
-
-    console.log('======================================');
     console.log('AgriSpike Firebase connection starting...');
-    console.log('======================================');
-
 
     for (let nodeId = 1; nodeId <= 4; nodeId++) {
+      // Primary path: AgriSpike/Node${nodeId}
+      const primaryPath = `AgriSpike/Node${nodeId}`;
+      const primaryRef = ref(database, primaryPath);
 
-      const nodePath = `AgriSpike/Node${nodeId}`;
-
-      const nodeRef = ref(database, nodePath);
-
-
-      console.log(
-        `Listening to Firebase: ${nodePath}`
-      );
-
-
-      const unsubscribe = onValue(
-        nodeRef,
-
-        (snapshot) => {
-
-          const data = snapshot.val();
-
-
-          // --------------------------------------------------
-          // No Firebase data
-          // --------------------------------------------------
-
-          if (!data) {
-
-            console.warn(
-              `No Firebase data found for Node${nodeId}`
-            );
-
-            return;
-          }
-
-
-          console.log(
-            `Firebase data received: Node${nodeId}`,
-            data
-          );
-
-
-          // --------------------------------------------------
-          // Convert Firebase data to website format
-          // --------------------------------------------------
-
-          const firebaseReading = {
-
-            // Node ID
-            node_id:
-              Number(data.ID ?? nodeId),
-
-
-            // Air Temperature
-            at:
-              data.AT !== undefined
-                ? Number(data.AT)
-                : undefined,
-
-
-            // Air Humidity
-            ah:
-              data.AH !== undefined
-                ? Number(data.AH)
-                : undefined,
-
-
-            // Soil Temperature
-            st:
-              data.ST !== undefined
-                ? Number(data.ST)
-                : undefined,
-
-
-            // Soil Moisture
-            sm:
-              data.SM !== undefined
-                ? Number(data.SM)
-                : undefined,
-
-
-            // Light Level
-            ldr:
-              data.LDR !== undefined
-                ? Number(data.LDR)
-                : undefined,
-
-
-            // Daylight Duration
-            dl:
-              data.DL !== undefined
-                ? Number(data.DL)
-                : undefined,
-
-
-            // Evapotranspiration
-            et:
-              data.ET !== undefined
-                ? Number(data.ET)
-                : undefined,
-
-
-            // Battery Voltage
-            bv:
-              data.BV !== undefined
-                ? Number(data.BV)
-                : undefined,
-
-
-            // Battery Percentage
-            bp:
-              data.BP !== undefined
-                ? Number(data.BP)
-                : undefined,
-
-
-            // Solar Voltage
-            sv:
-              data.SV !== undefined
-                ? Number(data.SV)
-                : undefined,
-
-
-            // Plant Stress Index
-            psi:
-              data.PSI !== undefined
-                ? Number(data.PSI)
-                : undefined,
-
-
-            // System status
-            sys:
-              data.SYS ?? 'OK',
-
-
-            // Operating mode
-            mode:
-              data.MODE ?? 'NORMAL',
-
-
-            // Error
-            // Firebase: ERR = 0 or 1
-            // Website: err = false or true
-            err:
-              Number(data.ERR ?? 0) !== 0,
-
-
-            // Extra Firebase values
-            ss:
-              data.SS ?? 'ACTIVE',
-
-            irr:
-              Number(data.IRR ?? 0),
-
-            hs:
-              Number(data.HS ?? 0),
-
-            pir:
-              Number(data.PIR ?? 0),
-
-
-            // Browser time when website received update
-            lastUpdated:
-              new Date().toLocaleTimeString(),
-          };
-
-
-          // --------------------------------------------------
-          // Update node reading
-          // --------------------------------------------------
-
+      const handleSnapshot = (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          console.warn(`No Firebase data found at ${primaryPath}`);
           this.readings[nodeId] = {
-
-            ...this.readings[nodeId],
-
-            ...firebaseReading,
+            node_id: nodeId,
+            id: nodeId,
+            at: undefined,
+            ah: undefined,
+            st: undefined,
+            sm: undefined,
+            ldr: undefined,
+            dl: undefined,
+            et: undefined,
+            bv: undefined,
+            bp: undefined,
+            sv: undefined,
+            psi: undefined,
+            sys: 'FAULT',
+            mode: 'NORMAL',
+            err: true,
+            errorCode: 0,
+            errCode: 0,
+            lastUpdated: '--',
           };
-
-
-          // Firebase is now our live backend
-          this.isLiveBackend = true;
-
-
-          // Notify React
           this.notify();
+          return;
+        }
 
+        const mapped = this.mapFirebaseReading(data, nodeId);
+        if (!mapped) return;
 
-          // Console test
-          console.log(
-            `Node${nodeId} Air Temperature:`,
-            firebaseReading.at
-          );
+        this.readings[nodeId] = {
+          ...this.readings[nodeId],
+          ...mapped,
+        };
+
+        this.isLiveBackend = true;
+        this.isLoading = false;
+        this.notify();
+
+        console.log(`Firebase live data received for Node${nodeId}:`, {
+          AT: mapped.at,
+          AH: mapped.ah,
+          ST: mapped.st,
+          SM: mapped.sm,
+          BV: mapped.bv,
+          BP: mapped.bp,
+          SYS: mapped.sys,
+          ERR: mapped.errorCode,
+        });
+      };
+
+      const handleError = (error) => {
+        console.error(`Firebase error for ${primaryPath}:`, error);
+        this.firebaseError = error;
+        this.notify();
+      };
+
+      const unsubPrimary = onValue(primaryRef, handleSnapshot, handleError);
+      this.firebaseUnsubscribers.push(unsubPrimary);
+
+      // Fallback listener for root Node${nodeId} in case master ESP32 writes to /Node${nodeId}
+      const rootPath = `Node${nodeId}`;
+      const rootRef = ref(database, rootPath);
+      const unsubRoot = onValue(
+        rootRef,
+        (snapshot) => {
+          if (snapshot.exists() && snapshot.val()) {
+            handleSnapshot(snapshot);
+          }
         },
-
-
-        (error) => {
-
-          console.error(
-            `Firebase error for Node${nodeId}:`,
-            error
-          );
+        () => {
+          // Silently ignore root path error if root path isn't used
         }
       );
-
-
-      this.firebaseUnsubscribers.push(unsubscribe);
+      this.firebaseUnsubscribers.push(unsubRoot);
     }
+
+    // --------------------------------------------------------
+    // Real-time Irrigation Listener: AgriSpike/Irrigation
+    // Reads Zone1.actualState ... Zone4.actualState
+    // --------------------------------------------------------
+    const irrigationPath = 'AgriSpike/Irrigation';
+    const irrigationRef = ref(database, irrigationPath);
+
+    console.log(`Listening to Firebase: ${irrigationPath}`);
+
+    const unsubscribeIrrigation = onValue(
+      irrigationRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        console.log('Firebase irrigation data received:', data);
+
+        const updatedSolenoids = { ...this.solenoids };
+
+        for (let nodeId = 1; nodeId <= 4; nodeId++) {
+          const zoneData = data[`Zone${nodeId}`];
+          if (zoneData !== undefined && zoneData !== null) {
+            const actual =
+              zoneData.actualState !== undefined
+                ? Number(zoneData.actualState)
+                : (zoneData.state !== undefined ? Number(zoneData.state) : 0);
+            updatedSolenoids[nodeId] = actual === 1;
+          }
+        }
+
+        this.solenoids = updatedSolenoids;
+        this.notify();
+      },
+      (error) => {
+        console.error('Firebase error for AgriSpike/Irrigation:', error);
+      }
+    );
+
+    this.firebaseUnsubscribers.push(unsubscribeIrrigation);
   }
 
 
@@ -489,80 +508,30 @@ class SensorDataService {
 
 
   // ==========================================================
-  // IRRIGATION - LOCAL FOR NOW
+  // IRRIGATION - FIREBASE REALTIME DATABASE CONTROL
   // ==========================================================
 
   toggleIrrigation(nodeId) {
+    const currentState = this.solenoids[nodeId];
+    const nextState = currentState ? 0 : 1;
 
-    const nextState =
-      !this.solenoids[nodeId];
+    console.log(
+      `Toggling irrigation for Zone${nodeId}: writing state = ${nextState}`
+    );
 
+    const zoneStateRef = ref(
+      database,
+      `AgriSpike/Irrigation/Zone${nodeId}/state`
+    );
 
-    this.solenoids = {
+    set(zoneStateRef, nextState).catch(error => {
+      console.error(
+        `Firebase error toggling irrigation for Zone${nodeId}:`,
+        error
+      );
+    });
 
-      ...this.solenoids,
-
-      [nodeId]: nextState,
-    };
-
-
-    // Temporary local simulation
-    if (
-      this.readings[nodeId] &&
-      !this.readings[nodeId].err
-    ) {
-
-      const currentSm =
-        this.readings[nodeId].sm;
-
-
-      const currentPsi =
-        this.readings[nodeId].psi;
-
-
-      if (
-        currentSm !== undefined &&
-        currentPsi !== undefined
-      ) {
-
-        const newSm = nextState
-          ? Math.min(80, currentSm + 15)
-          : currentSm;
-
-
-        const newPsi = nextState
-          ? Math.max(10, currentPsi - 20)
-          : currentPsi;
-
-
-        const newSys =
-          newSm >= 35 &&
-          newSm <= 70
-            ? 'OK'
-            : this.readings[nodeId].sys;
-
-
-        this.readings[nodeId] = {
-
-          ...this.readings[nodeId],
-
-          sm: newSm,
-
-          psi: newPsi,
-
-          sys: newSys,
-
-          lastUpdated:
-            new Date().toLocaleTimeString(),
-        };
-      }
-    }
-
-
-    this.notify();
-
-
-    return nextState;
+    return nextState === 1;
   }
 
 
@@ -571,49 +540,25 @@ class SensorDataService {
   // ==========================================================
 
   setAllIrrigation(state) {
+    const val = state ? 1 : 0;
 
-    const next = {};
+    console.log(
+      `Master switch: setting AgriSpike/Irrigation/Zone{1..4}/state = ${val}`
+    );
 
+    for (let nodeId = 1; nodeId <= 4; nodeId++) {
+      const zoneStateRef = ref(
+        database,
+        `AgriSpike/Irrigation/Zone${nodeId}/state`
+      );
 
-    this.nodes.forEach(node => {
-
-      next[node.id] = state;
-
-
-      if (
-        this.readings[node.id] &&
-        !this.readings[node.id].err
-      ) {
-
-        const currentSm =
-          this.readings[node.id].sm;
-
-
-        if (currentSm !== undefined) {
-
-          const newSm = state
-            ? Math.min(80, currentSm + 10)
-            : currentSm;
-
-
-          this.readings[node.id] = {
-
-            ...this.readings[node.id],
-
-            sm: newSm,
-
-            lastUpdated:
-              new Date().toLocaleTimeString(),
-          };
-        }
-      }
-    });
-
-
-    this.solenoids = next;
-
-
-    this.notify();
+      set(zoneStateRef, val).catch(error => {
+        console.error(
+          `Firebase error setting all irrigation for Zone${nodeId}:`,
+          error
+        );
+      });
+    }
   }
 
 

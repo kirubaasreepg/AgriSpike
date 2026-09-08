@@ -108,7 +108,7 @@ export default function NodeDetail() {
           <div style={{ fontSize: 32, marginBottom: 8 }}>⚠️</div>
           <h3 style={{ fontSize: 18, fontWeight: 700 }}>Telemetry Connection Lost</h3>
           <p style={{ fontSize: 14, marginTop: 4 }}>
-            Node 4 is not responding to LoRa polling requests. Check the solar charging circuit and SPI wiring between ESP32 and RFM95.
+            {node.name} is not responding to LoRa polling requests. Check the solar charging circuit and SPI wiring between ESP32 and RFM95.
           </p>
         </div>
       )}
